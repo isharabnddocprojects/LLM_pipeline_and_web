@@ -4,6 +4,8 @@
 
 This project implements a comprehensive data preprocessing pipeline for training Large Language Models (LLMs), followed by GPT-2 model training and evaluation. The pipeline processes raw text data through multiple quality filtering stages, knowledge augmentation, and consolidation steps to create high-quality training datasets. Two GPT-2 models were trained from scratch with standard preprocessing and another with enhanced knowledge augmentation, demonstrating measurable performance improvements through systematic data enhancement.
 
+Link to test the two GPT models developed : https://llm-web-app-609914857362.us-central1.run.app/
+
 ---
 
 ## 1. Pre-processing Pipeline
@@ -518,5 +520,8 @@ The web application provides a clean interface where users can:
 4. Compare model performance interactively
 
 This enables real-time evaluation of how knowledge augmentation improves model responses in practice.
+
+
+Link to test the two GPT models developed : https://llm-web-app-609914857362.us-central1.run.app/
 
 ---
