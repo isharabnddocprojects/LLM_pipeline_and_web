@@ -1,0 +1,141 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiniGPT Model Comparison</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Maincode LLM Comparison</h1>
+        <p class="subtitle">Comparing **Augmented Model** (with Knowledge Triples) vs. **Base Model**. (Running on: {{ "GPU" if device == 'cuda' else "CPU" }})</p>
+        
+        <div id="chat-window">
+            <div class="message system-message full-width">
+                Welcome! Enter a prompt to see how knowledge augmentation changed the model's output.
+            </div>
+        </div>
+
+        <div class="input-area">
+            <textarea id="prompt-input" placeholder="Type your prompt... (e.g., Once upon a time in Australia)"></textarea>
+            <input type="number" id="max-tokens" value="150" min="5" max="500">
+            <button onclick="sendMessage()">Generate</button>
+        </div>
+
+    </div>
+
+    <script>
+        const chatWindow = document.getElementById('chat-window');
+        const promptInput = document.getElementById('prompt-input');
+        const maxTokensInput = document.getElementById('max-tokens');
+        
+        function createMessageElement(text, sender, modelType = '') {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message');
+            msgDiv.classList.add(sender === 'user' ? 'user-message' : 'model-response-container');
+            
+            if (sender === 'user') {
+                msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+                chatWindow.appendChild(msgDiv);
+            } else {
+                // If sender is 'model', create the inner colored box structure
+                const label = document.createElement('div');
+                label.classList.add('model-label');
+                label.textContent = modelType;
+
+                const content = document.createElement('div');
+                content.classList.add('model-content');
+                content.innerHTML = text.replace(/\n/g, '<br>');
+
+                msgDiv.appendChild(label);
+                msgDiv.appendChild(content);
+                chatWindow.appendChild(msgDiv);
+            }
+            
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            return msgDiv; 
+        }
+
+        function createDualLoadingMessage() {
+            const container = document.createElement('div');
+            container.classList.add('model-response-container', 'dual-loading');
+            
+            // Augmented Model Loading Box
+            const newBox = document.createElement('div');
+            newBox.classList.add('message', 'model-message', 'augmented-model-loading');
+            newBox.innerHTML = '<div class="model-label">Augmented Model</div><div class="model-content">Generating...</div>';
+            
+            // Old Model Loading Box
+            const oldBox = document.createElement('div');
+            oldBox.classList.add('message', 'model-message', 'original-model-loading');
+            oldBox.innerHTML = '<div class="model-label">Original Model</div><div class="model-content">Generating...</div>';
+
+            container.appendChild(newBox);
+            container.appendChild(oldBox);
+            chatWindow.appendChild(container);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            
+            return { container, newBox, oldBox };
+        }
+
+
+        async function sendMessage() {
+            const prompt = promptInput.value.trim();
+            const maxTokens = parseInt(maxTokensInput.value);
+
+            if (!prompt) return;
+
+            // 1. Display User Prompt
+            createMessageElement(prompt, 'user');
+            promptInput.value = ''; 
+            
+            // 2. Show Dual Loading Message
+            const { container, newBox, oldBox } = createDualLoadingMessage();
+
+            try {
+                // 3. Send API Request
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt, max_tokens: maxTokens })
+                });
+
+                const data = await response.json();
+                
+                // 4. Update the dual boxes
+                container.classList.remove('dual-loading');
+                newBox.remove();
+                oldBox.remove();
+                
+                if (response.ok) {
+                    // Display Augmented Model (New)
+                    createMessageElement(data.response, 'model', 'Augmented Model (New)');
+                    
+                    // Display Original Model (Old)
+                    createMessageElement(data.response_old, 'model', 'Original Model (Old)');
+
+                } else {
+                    // If API failed, remove the dual container and show single error
+                    container.remove();
+                    createMessageElement(`API Error: ${data.error}`, 'system-message');
+                }
+
+            } catch (error) {
+                // Network failure
+                container.remove();
+                createMessageElement(`Network Error: ${error.message}`, 'system-message');
+            }
+        }
+
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
