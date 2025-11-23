@@ -6,6 +6,8 @@ This project implements a comprehensive data preprocessing pipeline for training
 
 Link to test the two GPT models developed : https://llm-web-app-609914857362.us-central1.run.app/
 
+![LLM web App](LLM_web_app.png)
+
 ---
 
 ## 1. Pre-processing Pipeline
